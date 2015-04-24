@@ -16,7 +16,7 @@ class APILazada_Request {
     $this->MainSite = $site;
     $this->ApiToken = $api_token;
   }
-  public function query($params) {
+  public function query($params = null) {
     $request_params = $this->params();
     $request_params = $this->sign($request_params);
 
@@ -41,10 +41,30 @@ class APILazada_Request {
     }
     return "";
   }
+
+  /**
+   * Extract data from response array
+   * @param array $data
+   * @return null|array
+   */
   protected function prepare($data = array()) {
     if (isset($data["Body"])) {
       return $data["Body"];
+    } else {
+      return null;
     }
+  }
+
+  /**
+   * Fix issue with single result in response
+   * @param array $arr
+   * @return array
+   */
+  protected function fix($arr = array()) {
+    if (isset($arr[0])) {
+      return $arr;
+    }
+    return array(0 => $arr);
   }
   /**
    * Init common params
@@ -82,7 +102,6 @@ class APILazada_Request {
    */
   private function curl($params) {
     $queryString = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
-
     // Open Curl connection
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, API_LAZADA_URL . $this->MainSite . "?" . $queryString);
@@ -93,8 +112,33 @@ class APILazada_Request {
     return $data;
   }
 
+  /**
+   * Convert response XML to associative array
+   * @param $xml string
+   * @return array
+   */
   private function convert($xml) {
     $obj = simplexml_load_string($xml);
-    return json_decode(json_encode($obj), true);
+    $array = json_decode(json_encode($obj), true);
+    $array = $this->sanitize($array);
+    return $array;
+  }
+
+  /**
+   * Clear array after convert. Remove empty arrays and change to string
+   * @param $arr array
+   * @return array
+   */
+  private function sanitize($arr) {
+    foreach($arr AS $k => $v) {
+      if (is_array($v)) {
+        if (count($v) > 0) {
+          $arr[$k] = $this->sanitize($v);
+        } else {
+          $arr[$k] = "";
+        }
+      }
+    }
+    return $arr;
   }
 }
