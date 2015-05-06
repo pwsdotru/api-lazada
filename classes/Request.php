@@ -7,6 +7,9 @@ class APILazada_Request {
   private $MainSite = null;
   private $ApiToken;
 
+  private $ParamsKey = array();
+  //:TODO: Add support to params method
+
   protected $MethodName = null;
   protected $RequestParams = array();
   protected $ErrorResponse = array();
@@ -42,6 +45,17 @@ class APILazada_Request {
     return "";
   }
 
+  /**
+   * Return error code for last API call.
+   * Return integer number
+   * @return string
+   */
+  public function error_code() {
+    if (isset($this->ErrorResponse) && is_array($this->ErrorResponse) && isset($this->ErrorResponse["ErrorCode"])) {
+      return $this->ErrorResponse["ErrorCode"];
+    }
+    return "";
+  }
   /**
    * Extract data from response array
    * @param array $data
