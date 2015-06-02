@@ -112,9 +112,10 @@ class APILazada_Request {
   /**
    * Make request to API url
    * @param $params array
+   * @param $info array - reference for curl status info
    * @return string
    */
-  private function curl($params) {
+  private function curl($params, &$info = array()) {
     $queryString = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
     // Open Curl connection
     $ch = curl_init();
@@ -122,6 +123,7 @@ class APILazada_Request {
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION,1);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
     $data = curl_exec($ch);
+    $info = curl_getinfo($ch);
     curl_close($ch);
     return $data;
   }
@@ -132,10 +134,15 @@ class APILazada_Request {
    * @return array
    */
   private function convert($xml) {
-    $obj = simplexml_load_string($xml);
-    $array = json_decode(json_encode($obj), true);
-    $array = $this->sanitize($array);
-    return $array;
+    if ($xml != "") {
+      $obj = simplexml_load_string($xml);
+      $array = json_decode(json_encode($obj), true);
+      if (is_array($array)) {
+        $array = $this->sanitize($array);
+        return $array;
+      }
+    }
+    return null;
   }
 
   /**
